@@ -6,8 +6,13 @@ import com.siemens.internship.model.Item;
 import com.siemens.internship.repository.ItemRepository;
 import com.siemens.internship.service.ItemService;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.modelmapper.ModelMapper;
@@ -24,17 +29,13 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private ModelMapper modelMapper;
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(10);
-    private List<Item> processedItems = new ArrayList<>();
-    private int processedCount = 0;
-
+    private static final ExecutorService executor = Executors.newFixedThreadPool(10);
 
     public List<ItemDTO> findAll() {
         List<Item> items = itemRepository.findAll();
 
         return items.stream()
                 .map(this::mapToItemDTO)
-                .sorted()
                 .toList();
     }
 
@@ -73,53 +74,53 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    /**
-     * Your Tasks
-     * Identify all concurrency and asynchronous programming issues in the code
-     * Fix the implementation to ensure:
-     * All items are properly processed before the CompletableFuture completes
-     * Thread safety for all shared state
-     * Proper error handling and propagation
-     * Efficient use of system resources
-     * Correct use of Spring's @Async annotation
-     * Add appropriate comments explaining your changes and why they fix the issues
-     * Write a brief explanation of what was wrong with the original implementation
-     * <p>
-     * Hints
-     * Consider how CompletableFuture composition can help coordinate multiple async operations
-     * Think about appropriate thread-safe collections
-     * Examine how errors are handled and propagated
-     * Consider the interaction between Spring's @Async and CompletableFuture
-     */
     @Async
     public List<ItemDTO> processItemsAsync() {
+        List<Long> itemIds = itemRepository.findAllIds();
 
-//        List<Long> itemIds = itemRepository.findAllIds();
-//
-//        for (Long id : itemIds) {
-//            CompletableFuture.runAsync(() -> {
-//                try {
-//                    Thread.sleep(100);
-//
-//                    Item item = itemRepository.findById(id).orElse(null);
-//                    if (item == null) {
-//                        return;
-//                    }
-//
-//                    processedCount++;
-//
-//                    item.setStatus("PROCESSED");
-//                    itemRepository.save(item);
-//                    processedItems.add(item);
-//
-//                } catch (InterruptedException e) {
-//                    System.out.println("Error: " + e.getMessage());
-//                }
-//            }, executor);
-//        }
-//
-//        return processedItems;
-        return new ArrayList<>();
+        //
+        Map<Integer, List<ItemDTO>> itemStatusMap = new ConcurrentHashMap<>();
+        itemStatusMap.put(0, Collections.synchronizedList(new ArrayList<>())); //
+        itemStatusMap.put(1, Collections.synchronizedList(new ArrayList<>())); //
+
+        //
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (Long itemId : itemIds) {
+            CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> {
+                        try {
+                            Thread.sleep(100); // Simulated delay
+                            // Guaranteed non-null, so we skip null checks
+                            return mapToItemDTO(itemRepository.findById(itemId).orElseThrow());
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException("Interrupted while retrieving item " + itemId, e);
+                        }
+                    }, executor)
+                    .thenAcceptAsync(itemDTO -> {
+                        if (!"PROCESSED".equals(itemDTO.getStatus())) {
+                            itemDTO.setStatus("PROCESSED");
+                            itemRepository.save(mapToItem(itemDTO));
+                            itemStatusMap.get(1).add(itemDTO); // processed
+                        } else {
+                            itemStatusMap.get(0).add(itemDTO); // already processed
+                        }
+                    }, executor)
+                    .exceptionally(ex -> {
+                        System.err.println("Error processing item ID " + itemId + ": " + ex.getMessage());
+                        return null;
+                    });
+
+            futures.add(future);
+        }
+
+        // Return only after all items are processed and no unprocessed items remain
+        try {
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .thenApply(v -> itemStatusMap.get(1)).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException();
+        }
     }
 
     private Item mapToItem(ItemDTO itemDTO) {
