@@ -29,7 +29,7 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private ModelMapper modelMapper;
 
-    private static final ExecutorService executor = Executors.newFixedThreadPool(10);
+    private static ExecutorService executor = Executors.newFixedThreadPool(10);
 
     public List<ItemDTO> findAll() {
         List<Item> items = itemRepository.findAll();
@@ -53,14 +53,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     public ItemDTO save(ItemDTO itemDTO) {
-        var itemToAdd = ItemDTO.builder()
-                .name(itemDTO.getName())
-                .description(itemDTO.getDescription())
-                .status(itemDTO.getStatus())
-                .email(itemDTO.getEmail())
-                .build();
-
-        var item = mapToItem(itemToAdd);
+        var item = mapToItem(itemDTO);
 
         return mapToItemDTO(itemRepository.save(item));
     }
