@@ -80,6 +80,7 @@ My informations sources were:
   - https://concurrencydeepdives.com/completablefuture-runasync-supplyasync/
   - https://medium.com/javarevisited/java-completablefuture-c47ca8c885af
   - https://www.baeldung.com/java-completablefuture-runasync-supplyasync
+
 One of the assignment requirements was to use a thread-safe collection. I chose `HashMap` to store the items that have not yet been processed. Items that have on status "PROCESSED" were ignored, because I need to print just the items with an updated status.
 Additionally, the return type of the method was updated to `CompletableFuture<?>`, since methods using `CompletableFuture` should return it. The final result is extracted and handled in the controller layer.
 
