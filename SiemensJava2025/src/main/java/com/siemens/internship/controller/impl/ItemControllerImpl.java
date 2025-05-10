@@ -9,7 +9,6 @@ import java.util.concurrent.ExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -24,10 +23,7 @@ public class ItemControllerImpl implements ItemController {
     }
 
     @Override
-    public ResponseEntity<ItemDTO> createItem(ItemDTO itemDTO, BindingResult result) {
-        if (result.hasErrors()) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<ItemDTO> createItem(ItemDTO itemDTO) {
         return new ResponseEntity<>(itemService.save(itemDTO), HttpStatus.CREATED);
     }
 
