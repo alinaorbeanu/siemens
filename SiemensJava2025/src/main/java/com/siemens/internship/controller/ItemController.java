@@ -1,6 +1,6 @@
 package com.siemens.internship.controller;
 
-import com.siemens.internship.model.Item;
+import com.siemens.internship.controller.dto.ItemDTO;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -15,20 +15,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface ItemController {
 
     @GetMapping
-    public ResponseEntity<List<Item>> getAllItems();
+    public ResponseEntity<List<ItemDTO>> getAllItems();
 
     @PostMapping
-    public ResponseEntity<Item> createItem(@Valid @RequestBody Item item, BindingResult result);
+    public ResponseEntity<ItemDTO> createItem(@Valid @RequestBody ItemDTO itemDTO, BindingResult result);
 
     @GetMapping("/{id}")
-    public ResponseEntity<Item> getItemById(@PathVariable Long id);
+    public ResponseEntity<ItemDTO> getItemById(@PathVariable Long id);
 
     @PutMapping("/{id}")
-    public ResponseEntity<Item> updateItem(@PathVariable Long id, @RequestBody Item item);
+    public ResponseEntity<ItemDTO> updateItem(@PathVariable Long id, @RequestBody ItemDTO itemDTO);
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id);
 
     @GetMapping("/process")
-    public ResponseEntity<List<Item>> processItems();
+    public ResponseEntity<List<ItemDTO>> processItems();
 }

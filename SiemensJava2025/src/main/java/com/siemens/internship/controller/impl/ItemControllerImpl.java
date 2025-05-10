@@ -1,69 +1,60 @@
 package com.siemens.internship.controller.impl;
 
 import com.siemens.internship.controller.ItemController;
-import com.siemens.internship.model.Item;
+import com.siemens.internship.controller.dto.ItemDTO;
+import com.siemens.internship.exception.ObjectNotFoundException;
 import com.siemens.internship.service.ItemService;
-import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/items")
 public class ItemControllerImpl implements ItemController {
 
     @Autowired
     private ItemService itemService;
 
-    public ResponseEntity<List<Item>> getAllItems() {
+    @Override
+    public ResponseEntity<List<ItemDTO>> getAllItems() {
         return new ResponseEntity<>(itemService.findAll(), HttpStatus.OK);
     }
 
-    @PostMapping
-    public ResponseEntity<Item> createItem(@Valid @RequestBody Item item, BindingResult result) {
+    @Override
+    public ResponseEntity<ItemDTO> createItem(ItemDTO itemDTO, BindingResult result) {
         if (result.hasErrors()) {
-            return new ResponseEntity<>(null, HttpStatus.CREATED);
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(itemService.save(item), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(itemService.save(itemDTO), HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Item> getItemById(@PathVariable Long id) {
-        return itemService.findById(id)
-                .map(item -> new ResponseEntity<>(item, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NO_CONTENT));
+    @Override
+    public ResponseEntity<ItemDTO> getItemById(Long id) {
+        return new ResponseEntity<>(itemService.findById(id), HttpStatus.OK);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Item> updateItem(@PathVariable Long id, @RequestBody Item item) {
-        Optional<Item> existingItem = itemService.findById(id);
-        if (existingItem.isPresent()) {
-            item.setId(id);
-            return new ResponseEntity<>(itemService.save(item), HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+    //TO DO:
+    @Override
+    public ResponseEntity<ItemDTO> updateItem(Long id, ItemDTO itemDTO) {
+        try {
+            itemService.findById(id);
+            itemDTO.setId(id);
+            return new ResponseEntity<>(itemService.save(itemDTO), HttpStatus.CREATED);
+        } catch (ObjectNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<Void> deleteItem(Long id) {
         itemService.deleteById(id);
-        return new ResponseEntity<>(HttpStatus.CONFLICT);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/process")
-    public ResponseEntity<List<Item>> processItems() {
+    @Override
+    public ResponseEntity<List<ItemDTO>> processItems() {
         return new ResponseEntity<>(itemService.processItemsAsync(), HttpStatus.OK);
     }
 }

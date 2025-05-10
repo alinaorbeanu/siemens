@@ -1,22 +1,21 @@
 package com.siemens.internship.service;
 
-import com.siemens.internship.model.Item;
+import com.siemens.internship.controller.dto.ItemDTO;
 import java.util.List;
-import java.util.Optional;
 
 public interface ItemService {
 
-    List<Item> findAll();
+    List<ItemDTO> findAll();
 
-    Optional<Item> findById(Long id);
+    ItemDTO findById(Long id);
 
-    Optional<Item> findByEmail(String email);
+    ItemDTO findByEmail(String email);
 
-    Item save(Item item);
+    ItemDTO save(ItemDTO itemDTO);
 
     void deleteById(Long id);
 
-    List<Item> processItemsAsync();
+    List<ItemDTO> processItemsAsync();
 
 }
 

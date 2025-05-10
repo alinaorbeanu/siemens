@@ -1,7 +1,7 @@
 package com.siemens.internship.annotation.validator;
 
 import com.siemens.internship.annotation.UniqueEmail;
-import com.siemens.internship.exception.ItemNotFoundException;
+import com.siemens.internship.exception.ObjectNotFoundException;
 import com.siemens.internship.service.ItemService;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -17,7 +17,7 @@ public class UniqueEmailValidator implements ConstraintValidator<UniqueEmail, St
         try {
             itemService.findByEmail(email);
             return false;
-        } catch (ItemNotFoundException e) {
+        } catch (ObjectNotFoundException e) {
             return true;
         }
     }
