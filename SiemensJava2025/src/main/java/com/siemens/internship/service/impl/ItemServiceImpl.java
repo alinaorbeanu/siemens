@@ -31,6 +31,11 @@ public class ItemServiceImpl implements ItemService {
         return itemRepository.findById(id);
     }
 
+    @Override
+    public Optional<Item> findByEmail(String email) {
+        return itemRepository.findByEmail(email);
+    }
+
     public Item save(Item item) {
         return itemRepository.save(item);
     }

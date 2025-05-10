@@ -10,6 +10,8 @@ public interface ItemService {
 
     Optional<Item> findById(Long id);
 
+    Optional<Item> findByEmail(String email);
+
     Item save(Item item);
 
     void deleteById(Long id);
