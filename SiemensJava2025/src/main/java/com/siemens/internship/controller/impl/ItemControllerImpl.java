@@ -1,5 +1,6 @@
-package com.siemens.internship.controller;
+package com.siemens.internship.controller.impl;
 
+import com.siemens.internship.controller.ItemController;
 import com.siemens.internship.model.Item;
 import com.siemens.internship.service.ItemService;
 import jakarta.validation.Valid;
