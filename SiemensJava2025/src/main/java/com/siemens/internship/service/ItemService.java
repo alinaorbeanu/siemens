@@ -14,6 +14,8 @@ public interface ItemService {
 
     ItemDTO save(ItemDTO itemDTO);
 
+    ItemDTO update(Long id, ItemDTO itemDTO);
+
     void deleteById(Long id);
 
     CompletableFuture<List<ItemDTO>> processItemsAsync();

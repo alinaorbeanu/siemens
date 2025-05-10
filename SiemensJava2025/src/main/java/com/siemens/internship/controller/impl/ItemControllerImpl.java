@@ -2,7 +2,6 @@ package com.siemens.internship.controller.impl;
 
 import com.siemens.internship.controller.ItemController;
 import com.siemens.internship.controller.dto.ItemDTO;
-import com.siemens.internship.exception.ObjectNotFoundException;
 import com.siemens.internship.service.ItemService;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -29,19 +28,12 @@ public class ItemControllerImpl implements ItemController {
 
     @Override
     public ResponseEntity<ItemDTO> getItemById(Long id) {
-        return new ResponseEntity<>(itemService.findById(id), HttpStatus.OK);
+        return new ResponseEntity<>(itemService.findById(id), HttpStatus.FOUND);
     }
 
-    //TO DO:
     @Override
     public ResponseEntity<ItemDTO> updateItem(Long id, ItemDTO itemDTO) {
-        try {
-            itemService.findById(id);
-            itemDTO.setId(id);
-            return new ResponseEntity<>(itemService.save(itemDTO), HttpStatus.CREATED);
-        } catch (ObjectNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        return new ResponseEntity<>(itemService.update(id, itemDTO), HttpStatus.OK);
     }
 
     @Override
@@ -55,7 +47,7 @@ public class ItemControllerImpl implements ItemController {
         try {
             return new ResponseEntity<>(itemService.processItemsAsync().get(), HttpStatus.OK);
         } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException();
+            throw new RuntimeException("Error occurred while processing items asynchronously: " + e.getMessage(), e);
         }
     }
 }

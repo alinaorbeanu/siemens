@@ -1,6 +1,7 @@
 package com.siemens.internship.service.impl;
 
 import com.siemens.internship.controller.dto.ItemDTO;
+import com.siemens.internship.exception.EmailAlreadyExistsException;
 import com.siemens.internship.exception.ObjectNotFoundException;
 import com.siemens.internship.model.Item;
 import com.siemens.internship.repository.ItemRepository;
@@ -62,6 +63,26 @@ public class ItemServiceImpl implements ItemService {
         var item = mapToItem(itemToAdd);
 
         return mapToItemDTO(itemRepository.save(item));
+    }
+
+    @Override
+    public ItemDTO update(Long id, ItemDTO itemDTO) {
+        ItemDTO itemToUpdate = findById(id);
+
+        if (itemDTO.getEmail().equals(itemToUpdate.getEmail())) {
+            buildItemWithoutEmail(itemDTO, itemToUpdate);
+
+            return mapToItemDTO(itemRepository.save(mapToItem(itemToUpdate)));
+        } else {
+            ItemDTO itemByEmail = findByEmail(itemDTO.getEmail());
+            if (itemByEmail == null) {
+                buildItemWithoutEmail(itemDTO, itemToUpdate);
+                itemToUpdate.setEmail(itemDTO.getEmail());
+                return mapToItemDTO(itemRepository.save(mapToItem(itemToUpdate)));
+            } else {
+                throw new EmailAlreadyExistsException("Item with email: " + itemDTO.getEmail() + " already exists!");
+            }
+        }
     }
 
     public void deleteById(Long id) {
@@ -127,5 +148,11 @@ public class ItemServiceImpl implements ItemService {
 
     private ItemDTO mapToItemDTO(Item item) {
         return modelMapper.map(item, ItemDTO.class);
+    }
+
+    private static void buildItemWithoutEmail(ItemDTO itemDTO, ItemDTO itemToUpdate) {
+        itemToUpdate.setName(itemDTO.getName());
+        itemToUpdate.setDescription(itemDTO.getDescription());
+        itemToUpdate.setStatus(itemDTO.getStatus());
     }
 }

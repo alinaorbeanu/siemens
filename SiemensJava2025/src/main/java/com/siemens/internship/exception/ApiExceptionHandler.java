@@ -1,6 +1,7 @@
 package com.siemens.internship.exception;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.ExecutionException;
 import org.apache.coyote.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return getResponseEntity(exception, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    protected ResponseEntity<ApiException> handleInternalServerError(Exception exception) {
+        return getResponseEntity(exception, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         ApiException apiException = new ApiException(HttpStatus.BAD_REQUEST);
@@ -40,6 +47,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
         handleLogging(apiException);
         return new ResponseEntity<>(apiException, apiException.getHttpStatus());
+    }
+
+    @ExceptionHandler(ExecutionException.class)
+    protected ResponseEntity<ApiException> handleExecutionException(ExecutionException ex) {
+        return getResponseEntity(ex, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(InterruptedException.class)
+    protected ResponseEntity<ApiException> handleInterruptedException(InterruptedException ex) {
+        return getResponseEntity(ex, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private ResponseEntity<ApiException> getResponseEntity(Exception exception, HttpStatus httpStatus) {
