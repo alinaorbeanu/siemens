@@ -2,6 +2,7 @@ package com.siemens.internship.service;
 
 import com.siemens.internship.controller.dto.ItemDTO;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface ItemService {
 
@@ -15,7 +16,7 @@ public interface ItemService {
 
     void deleteById(Long id);
 
-    List<ItemDTO> processItemsAsync();
+    CompletableFuture<List<ItemDTO>> processItemsAsync();
 
 }
 

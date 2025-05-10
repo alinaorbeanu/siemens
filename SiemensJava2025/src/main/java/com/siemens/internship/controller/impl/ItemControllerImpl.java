@@ -5,6 +5,7 @@ import com.siemens.internship.controller.dto.ItemDTO;
 import com.siemens.internship.exception.ObjectNotFoundException;
 import com.siemens.internship.service.ItemService;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +56,10 @@ public class ItemControllerImpl implements ItemController {
 
     @Override
     public ResponseEntity<List<ItemDTO>> processItems() {
-        return new ResponseEntity<>(itemService.processItemsAsync(), HttpStatus.OK);
+        try {
+            return new ResponseEntity<>(itemService.processItemsAsync().get(), HttpStatus.OK);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException();
+        }
     }
 }

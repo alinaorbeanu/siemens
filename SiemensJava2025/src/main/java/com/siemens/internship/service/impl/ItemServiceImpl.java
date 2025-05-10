@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.modelmapper.ModelMapper;
@@ -75,35 +74,38 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Async
-    public List<ItemDTO> processItemsAsync() {
+    public CompletableFuture<List<ItemDTO>> processItemsAsync() {
+
+        // The full explications are on the README.md file
+        // Retrieve all items ids from the DB
         List<Long> itemIds = itemRepository.findAllIds();
 
-        //
+        // I chose as tread-safe collection HashMap and I stored the items like this:
+        // Key: 0 - value: a list with items status != "PROCESSED" and we should process
+        // I don't need the items that already processed, so I didn't create a slot for them
         Map<Integer, List<ItemDTO>> itemStatusMap = new ConcurrentHashMap<>();
-        itemStatusMap.put(0, Collections.synchronizedList(new ArrayList<>())); //
-        itemStatusMap.put(1, Collections.synchronizedList(new ArrayList<>())); //
-
-        //
+        itemStatusMap.put(0, Collections.synchronizedList(new ArrayList<>()));
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
+        // An async task is used to process each item
         for (Long itemId : itemIds) {
             CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> {
                         try {
-                            Thread.sleep(100); // Simulated delay
-                            // Guaranteed non-null, so we skip null checks
+                            Thread.sleep(100);
+                            // When saving each item, I check that each field is filled in, also the email is unique and valid
                             return mapToItemDTO(itemRepository.findById(itemId).orElseThrow());
                         } catch (InterruptedException e) {
                             throw new RuntimeException("Interrupted while retrieving item " + itemId, e);
                         }
                     }, executor)
                     .thenAcceptAsync(itemDTO -> {
+
+                        // If status is not "PROCESSED" then it will be updated in DB and added to corresponding map
                         if (!"PROCESSED".equals(itemDTO.getStatus())) {
                             itemDTO.setStatus("PROCESSED");
                             itemRepository.save(mapToItem(itemDTO));
-                            itemStatusMap.get(1).add(itemDTO); // processed
-                        } else {
-                            itemStatusMap.get(0).add(itemDTO); // already processed
+                            itemStatusMap.get(0).add(itemDTO);
                         }
                     }, executor)
                     .exceptionally(ex -> {
@@ -114,13 +116,9 @@ public class ItemServiceImpl implements ItemService {
             futures.add(future);
         }
 
-        // Return only after all items are processed and no unprocessed items remain
-        try {
-            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                    .thenApply(v -> itemStatusMap.get(1)).get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException();
-        }
+        // Wait for all tasks to complete and then return the newly processed items
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> itemStatusMap.get(0));
     }
 
     private Item mapToItem(ItemDTO itemDTO) {
